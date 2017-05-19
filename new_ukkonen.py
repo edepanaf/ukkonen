@@ -75,14 +75,16 @@ class GraphWithEdgeContent:
         Returns:
             A string containing the textual representation of this graph.
         """
-        return "%r" % self.__adjacencies__
+        return "root = %r adjacencies = %r" % (self.root, self.__adjacencies__)
 
     def __str__(self) -> str:
         """
         Returns:
             A string containing representing this graph.
         """
-        return "%s" % self.__adjacencies__
+        return "root = %s adjacencies = %s" % (self.root, self.__adjacencies__)
+
+LEAF = None
 
 class ImplicitState:
     """
@@ -216,6 +218,8 @@ class ImplicitState:
     def add_leaf(self, position):
         """
         Add a leaf in the suffix tree.
+        Args:
+            position: The current index in the input word.
         Returns:
             The index of the newly added state.
         """
@@ -223,8 +227,8 @@ class ImplicitState:
         # and to be in its canonical representation
         new_explicit_state = self.add_explicit()
         self.tree.update_edge_content(new_explicit_state, self.word[position],
-            (position, self.leafs_length - position, 'leaf'))
-            # (position, math.inf, 'leaf'))
+            (position, self.leafs_length - position, LEAF))
+            # (position, math.inf, LEAF))
         return new_explicit_state
 
     def elongate(self, position):
@@ -268,49 +272,49 @@ def ukkonen(word):
 
 from graphviz import run_graphviz, default_graphviz_style
 
-def to_dot(word :str, tree :list) -> str:
+def to_dot(word :str, tree :GraphWithEdgeContent) -> str:
     """
     Graphviz export.
     Args:
         word: A string containing the word used to build the suffix tree.
-        tree: The list representing the suffix tree.
+        tree: The GraphWithEdgeContent representing the suffix tree.
     Returns:
         The string in the graphviz format representing the suffix tree.
     """
     s = "digraph G { %s" % default_graphviz_style()
-
+    adjacencies = tree.__adjacencies__
+    print(adjacencies)
     # Vertices
-    for u, d in enumerate(tree):
-        if u == BOTTOM:
-            s += "  %s [label = <&perp;>];\n" % u
-        elif u == ROOT:
+    for u, d in enumerate(adjacencies):
+        if u == tree.root:
             s += "  %s [label = <&Lambda;>];\n" % u
-        else:
-            s += "  %s [label = <%s>%s];\n" % (u, u, " shape = \"doublecircle\"" if len(d) > 0 else "")
+            break
+        # We leave the default style for the other vertices
 
     # Arcs
-    for u, d in enumerate(tree):
-        print("u = %s d = %s" % (u,d))
-        if u == BOTTOM:
-            s += "  %s -> %s [label = <&Sigma;>];\n" % (BOTTOM, ROOT)
-            continue
-
+    idx_leaf = tree.num_vertices()
+    for u, d in enumerate(adjacencies):
         for (a, t) in d.items():
-            if a == "suffix": continue
-            (i, j, v) = t
+            print("a = %s t = %s" %(a,t))
+            if a == "suffix":
+                continue
 
-            # Transitions
-            infix = word[i:j+1]
-            s += "  %(u)s -> %(v)s [label = <%(infix)s>];\n" % locals()
-
-            # Suffix links
-            #if node.slink != None:
-            #    s += "%s -> %s [style=\"dotted\"];" % (u, node.slink)
+            (i, length, v) = t
+            infix = word[i:i+length]
+            if v:
+                # Transitions
+                s += "  %(u)s -> %(v)s [label = <%(a)s : %(infix)s>];\n" % locals()
+            else:
+                # Transition toward a leaf
+                v = idx_leaf
+                s += "  %(u)s -> %(v)s [label = <%(infix)s>];\n" % locals()
+                idx_leaf += 1
 
     s += "}"
     return s
 
-
 if __name__ == '__main__':
-    s = ukkonen("ababc")
-    print(s)
+    word = "ababc"
+    s = ukkonen(word)
+    run_graphviz(to_dot(word, s.tree), "out.svg")
+

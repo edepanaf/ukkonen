@@ -173,11 +173,10 @@ def to_dot(word :str, tree :list) -> str:
         elif u == ROOT:
             s += "  %s [label = <&Lambda;>];\n" % u
         else:
-            s += "  %s [label = <%s>%s];\n" % (u, u, " shape = \"doublecircle\"" if len(d) > 0 else "")
+            s += "  %s [label = <%s> shape = \"doublecircle\"];\n" % (u, u)
 
     # Arcs
     for u, d in enumerate(tree):
-        print("u = %s d = %s" % (u,d))
         if u == BOTTOM:
             s += "  %s -> %s [label = <&Sigma;>];\n" % (BOTTOM, ROOT)
             continue
@@ -198,8 +197,6 @@ def to_dot(word :str, tree :list) -> str:
     return s
 
 if __name__ == '__main__':
-    from pprint import pprint
     word = "ababc" # "cacao"
     tree = ukkonen(word)
     run_graphviz(to_dot(word, tree), "out.svg")
-    pprint(tree)
