@@ -133,6 +133,7 @@ def ukkonen(word):
       # creation of the suffix link
       tree[previous_node][SUFFIX] = node
       # moving to the suffix
+      previous_node = node
       node = tree[node][SUFFIX]
     # The case of the root without a 'letter' transition is treated in the next conditional.
     if node == ROOT and letter not in tree[ROOT]:
